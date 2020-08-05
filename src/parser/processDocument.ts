@@ -119,6 +119,40 @@ export function getAllMethods(sourceCode: SourceCode): ABLMethod[] {
             break;
         }
     }
+
+    // Get OO methods from .cls files
+    const regexStartCls = new RegExp(/\bmethod[\s\t\n]+(?:(private|protected|public)[\s\t\n]+)*(?:(static|abstract)[\s\t\n]+)*(override[\s\t\n]+)*(final[\s\t\n]+)*([\w\d\-]+)[\s\t\n]+([\w\d\-]+)([^]*?)(?:[\.\:][^\w\d\-\+])/gim);
+    // 1 = private | protected | public
+    // 2 = static | abstract
+    // 3 = override
+    // 4 = final
+    // 5 = return type
+    // 6 = name
+    // 7 = input/output parameters
+    const regexEndCls = new RegExp(/\b(?:end[\s\t]+method)\b/gim);
+    //
+    let resStartCls = regexStartCls.exec(text);
+    let resEndCls;
+    while (resStartCls) {
+        regexEndCls.lastIndex = regexStartCls.lastIndex;
+        resEndCls = regexEndCls.exec(text);
+        if (resEndCls) {
+            const mCls = new definition_1.ABLMethod();
+            try {
+                mCls.name = resStartCls[6];
+                mCls.lineAt = sourceCode.document.positionAt(resStartCls.index).line;
+                mCls.lineEnd = sourceCode.document.positionAt(regexEndCls.lastIndex).line;
+                mCls.params = [];
+                result.push(mCls);
+            }
+            catch (_a) { } // suppress errors
+            resStartCls = regexStartCls.exec(text);
+        }
+        else {
+            break;
+        }
+    }
+
     return result;
 }
 
